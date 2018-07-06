@@ -460,6 +460,62 @@ class PreGrasp (Manifold):
         self.tasks = [ self.graspTask.task ]
         # TODO Add velocity
 
+## TODO Represents a flat surface
+class OpSurface(OpFrame):
+    def __init__ (self, srdf, model = None, enabled = True):
+        self.robotName = srdf["robot"]
+        self.name = srdf["name"]
+        self.key = self.robotName + "/" + self.name
+        self.link = srdf["link"]
+        pose = transQuatToSE3 (srdf["position"])
+        if srdf.has_key ("joints"):
+            assert model is not None
+            ## Only for grippers
+            self.joints = srdf["joints"]
+            self._setupParentJoint (self.link, pose, model)
+            self.enabled = enabled
+        else:
+            ## Only for handles
+            self.pose = pose
+
+    def _setupParentJoint (self, link, pose, model):
+        frameid = model.getFrameId (link)
+        if frameid < 0 or frameid >= len(model.frames):
+            raise ValueError("Link " + self.link + " not found")
+        frame = model.frames[frameid]
+
+        self.pose = frame.placement * pose
+        self.joint = model.names[frame.parent]
+
+    @property
+    def fullLink  (self): return self.robotName + "/" + self.link
+    @property
+    def fullJoint (self): return self.robotName + "/" + self.joint
+    @property
+    def fullName  (self): return self.robotName + "/" + self.name
+
+## TODO
+class PrePlace (Manifold):
+    def __init__ (self, object_surface, env_surface, gripper, handle):
+        super(PrePlace, self).__init__()
+        self.osurf = osurf
+        self.esurf = esurf 
+        self.gripper = gripper
+        self.handle = handle
+
+    def makeTasks(self, sotrobot, withMeasurementOfObjectPos):
+        #TODO so far, we do not consider actuated environment surface
+        name = PrePlace.sep.join(["", "preplace", self.osurf.fullName, self.esurf.fullName,
+            "based", self.gripper.name, self.handle.fullName])
+        self.graspTask = MetaTaskKine6d (name, sotrobot.dynamic,
+                self.gripper.joint, self.gripper.joint)
+
+        setGain(self.graspTask.gain,(4.9,0.9,0.01,0.9))
+        self.graspTask.task.setWithDerivative (False)
+
+        # allow tx, ty and rz
+        self.graspTask.feature.selec.value = '011100'
+
 class Grasp (Manifold):
     def __init__ (self, gripper, handle, otherGraspOnObject = None):
         super(Grasp, self).__init__()
@@ -628,6 +684,11 @@ class EndEffector (Manifold):
         assert ip == len(position)
         self.tp.feature.posture.value = q
         setGain(self.tp.gain,(4.9,0.9,0.01,0.9))
+
+class FrameAdmittanceControl (Manifold):
+    def __init__ (self, sotrobot, gripper, position):
+        from dynamic_graph.sot.core import Task, GainAdaptive
+        super(FrameAdmittanceControl, self).__init__()
 
 class Foot (Manifold):
     def __init__ (self, footname, sotrobot, selec='111111'):
