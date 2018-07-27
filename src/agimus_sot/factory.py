@@ -9,8 +9,8 @@ class Affordance(object):
         self.handle  = handle
         self.controlType = { "open": openControlType, "close": closeControlType, }
         self.ref = refs
-        self.controlParams = {}
-        self.simuParams = {}
+        self.controlParams = controlParams
+        self.simuParams = simuParams
 
     def setControl (self, refOpen, refClose, openType = "position", closeType="position"):
         if openType != "position" or closeType != "position":
@@ -37,32 +37,6 @@ class Affordance(object):
         spring  = self.simuParams.get("spring" , 100. )
         refPos  = self.simuParams.get("refPos" , self.ref["angle_close"] )
         return mass,damping,spring,refPos
-
-    def makePositionAndTorqueControl (self,type,period,simulateTorqueFeedback=False):
-        from agimus_sot.control.gripper import AdmittanceControl
-        # type = "open" or "close"
-        desired_torque = self.ref["torque"]
-        theta_open = self.ref["angle_open"]
-        estimated_theta_close = self.ref["angle_close"]
-        threshold_up = tuple([ x / 10. for x in desired_torque ])
-        threshold_down = tuple([ x / 100. for x in desired_torque ])
-        wn, z, alpha, tau, = self.getControlParameter ()
-
-        ac = AdmittanceControl ("controller_" + self.gripper + "_" + str(self.handle) + "_" + type,
-                theta_open, estimated_theta_close,
-                desired_torque, period,
-                threshold_up, threshold_down,
-                wn, z, alpha, tau,)
-        if simulateTorqueFeedback:
-            M,d,k,x0 = self.getSimulationParameters()
-            ac.setupFeedbackSimulation(M,d,k,x0)
-        if type=="open":
-            ac.setGripperOpen  ()
-        elif type=="close":
-            ac.setGripperClosed()
-        else:
-            raise ValueError ("Type should be either 'open' or 'closed'")
-        return ac
 
 class TaskFactory(ConstraintFactoryAbstract):
     gfields = ('grasp', 'pregrasp', 'gripper_open', 'gripper_close')
