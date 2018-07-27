@@ -97,7 +97,7 @@ class AdmittanceControl:
         delay.setMemory (tuple([0. for _ in self.est_theta_closed]))
         # plug (self.phi2torque.output, delay.sin)
         plug (self.sim_switch.sout, delay.sin)
-        self.setCurrentConditionIn (delay.current)
+        # self.setCurrentConditionIn (delay.current)
         plug (delay.previous, self.currentTorqueIn)
 
     def readPositionsFromRobot (self, robot, jointNames):
@@ -135,7 +135,6 @@ class AdmittanceControl:
         self._multiply_by_torque_constants.sin0.value = torque_constants
         plug (self._current_selec.sout, self._multiply_by_torque_constants.sin1)
 
-        self.setCurrentConditionIn (self._multiply_by_torque_constants.sout)
         plug (self._multiply_by_torque_constants.sout, self.currentTorqueIn)
 
     def readTorquesFromRobot (self, robot, jointNames):
@@ -152,7 +151,6 @@ class AdmittanceControl:
             self._torque_selec.addSelec (jmodel.idx_v-6,jmodel.idx_v-6 + jmodel.nv)
         plug (robot.device.ptorques, self._torque_selec.sin)
 
-        self.setCurrentConditionIn (self._torque_selec.sout)
         plug (self._torque_selec.sout, self.currentTorqueIn)
 
     def addOutputTo (self, robot, jointNames, mix_of_vector, sot=None):
