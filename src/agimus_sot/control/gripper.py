@@ -22,8 +22,6 @@ class AdmittanceControl:
 
         self._makeTorqueControl (alpha, tau)
 
-        self._makeControllerSwich ()
-
     #TODO I think this is not needed as currently admittance_control is used only
     # to close a gripper.
     def setGripperClosed (self):
