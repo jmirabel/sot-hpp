@@ -567,17 +567,13 @@ class EndEffector (Manifold):
         from agimus_sot.control.gripper import AdmittanceControl
         # type = "open" or "close"
         desired_torque = affordance.ref["torque"]
-        theta_open = affordance.ref["angle_open"]
         estimated_theta_close = affordance.ref["angle_close"]
-        threshold_up = tuple([ x / 10. for x in desired_torque ])
-        threshold_down = tuple([ x / 100. for x in desired_torque ])
         wn, z, alpha, tau, = affordance.getControlParameter ()
 
         self.ac = AdmittanceControl ("AC_" + self.name + "_" + type,
-                theta_open, estimated_theta_close,
+                estimated_theta_close,
                 desired_torque, period,
-                threshold_up, threshold_down,
-                wn, z, alpha, tau,)
+                alpha, tau,)
 
         if simulateTorqueFeedback:
             # Get torque from an internal simulation
@@ -591,12 +587,6 @@ class EndEffector (Manifold):
             # TODO allows to switch between current and torque sensors
             self.ac.readCurrentsFromRobot(self.robot, self.jointNames, (self.gripper.torque_constant,))
             # self.ac.readTorquesFromRobot(self.robot, self.jointNames)
-        if type=="open":
-            self.ac.setGripperOpen  ()
-        elif type=="close":
-            self.ac.setGripperClosed()
-        else:
-            raise ValueError ("Type should be either 'open' or 'close'")
 
         from dynamic_graph.sot.core.operator import Mix_of_vector
         mix_of_vector = Mix_of_vector (self.name + "_control_to_robot_control")
