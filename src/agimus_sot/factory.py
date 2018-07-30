@@ -13,6 +13,8 @@ class Affordance(object):
         self.simuParams = simuParams
 
     def setControl (self, refOpen, refClose, openType = "position", closeType="position"):
+        from warnings import warn
+        warn("Method Affordance.getControl will be deleted soon!")
         if openType != "position" or closeType != "position":
             raise NotImplementedError ("Only position control is implemented for gripper opening/closure.")
         self.controlType = {
@@ -27,9 +29,9 @@ class Affordance(object):
     def getControlParameter (self):
         wn    = self.controlParams.get("wn",    10.)
         z     = self.controlParams.get("z",     1. )
-        alpha = self.controlParams.get("alpha", 1. )
-        tau   = self.controlParams.get("tau",   1. )
-        return wn, z, alpha, tau
+        nums_tor   = self.controlParams.get("torque_num", (1.,)),
+        denoms_tor = self.controlParams.get("torque_denom", (1.,))
+        return wn, z, nums_tor, denoms_tor
 
     def getSimulationParameters (self):
         mass    = self.simuParams.get("mass"   , 0.)
@@ -66,9 +68,7 @@ class TaskFactory(ConstraintFactoryAbstract):
             ee = EndEffector (robot, gripperFrame, "p" + type + ("_" + handle if handle is not None else ""))
             ee.makePositionControl (aff.ref["angle_"+type])
             self._grippers[key] = ee
-        elif aff.controlType[type] == "torque":
-            raise NotImplementedError ("Torque control alone is not implemented for gripper.")
-        elif aff.controlType[type] == "position_torque":
+        elif aff.controlType[type] == "torque" or aff.controlType[type] == "position_torque":
             ee = EndEffector (robot, gripperFrame, "pt_" + type + ("_" + handle if handle is not None else ""))
             ee.makeAdmittanceControl (aff, type,
                     period = gf.parameters["period"],
